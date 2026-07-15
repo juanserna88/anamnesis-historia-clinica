@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Historia Clínica · Anamnesis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#000C18;
+    --ink:#0B2036;
+    --ink-soft:#4A5C64;
+    --paper:#FFFFFF;
+    --paper-dim:#F4F6F5;
+    --line:#DCE3E0;
+    --vital:#1E9E52;
+    --vital-dim:#E3F4E9;
+    --swoosh:#32C864;
+    --teal:#003334;
+    --teal-dim:#DCEAE9;
+    --amber:#B5791F;
+    --amber-dim:#F3E6CE;
+    --radius:2px;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+  h1,h2,h3,h4{font-family:'Fraunces',serif; margin:0; color:var(--ink); font-weight:600;}
+  p{margin:0;}
+  a{color:inherit;}
+  .mono{font-family:'IBM Plex Mono',monospace; letter-spacing:0.02em;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--vital);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:16px;height:1px;
+    background:var(--vital);
+    display:inline-block;
+  }
+  :focus-visible{outline:2px solid var(--vital); outline-offset:3px;}
+
+  /* ---------- layout shell ---------- */
+  .shell{
+    display:grid;
+    grid-template-columns:236px 1fr;
+  }
+  @media (max-width:940px){
+    .shell{grid-template-columns:1fr;}
+  }
+
+  /* ---------- nav rail (signature: ECG trace) ---------- */
+  .rail{
+    position:sticky; top:0; height:100vh; height:100dvh;
+    padding:28px 0 28px 30px;
+    border-right:1px solid var(--line);
+    display:flex; flex-direction:column;
+    justify-content:space-between;
+  }
+  @media (max-width:940px){
+    .rail{position:static; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:16px 20px;}
+  }
+  .rail-top{display:flex; flex-direction:column; gap:22px;}
+  .rail-brand{font-family:'Fraunces',serif; font-size:17px; font-weight:600; line-height:1.25;}
+  .rail-brand span{display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); font-weight:500; margin-bottom:6px;}
+
+  .trace-wrap{
+    display:flex; gap:12px; flex:1; min-height:0;
+    margin-top:6px;
+  }
+  @media (max-width:940px){ .trace-wrap{display:none;} }
+  .trace-svg{width:26px; flex-shrink:0; height:100%; overflow:visible;}
+  #trace-path{
+    fill:none; stroke:var(--line); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  }
+  #trace-fill{
+    fill:none; stroke:var(--vital); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
+  }
+  #trace-blip{ fill:var(--vital); }
+
+  .navlist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:2px;}
+  @media (max-width:940px){
+    .navlist{flex-direction:row; overflow-x:auto; gap:4px; padding-bottom:4px; -webkit-overflow-scrolling:touch;}
+  }
+  .navlist button{
+    all:unset; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    color:var(--ink-soft);
+    padding:7px 10px 7px 0;
+    white-space:nowrap;
+    border-left:2px solid transparent;
+    padding-left:10px;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  @media (max-width:940px){
+    .navlist button{border-left:none; border-bottom:2px solid transparent; padding:11px 12px; font-size:12px;}
+  }
+  .navlist button:hover{color:var(--ink);}
+  .navlist button.active{color:var(--vital); border-color:var(--vital); font-weight:600;}
+
+  .rail-foot{font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ink-soft); line-height:1.5;}
+  @media (max-width:940px){ .rail-foot{display:none;} }
+
+  main{min-width:0;}
+  section{
+    padding:96px 64px;
+    max-width:var(--maxw);
+    border-bottom:1px solid var(--line);
+  }
+  @media (max-width:940px){ section{padding:64px 24px;} }
+  @media (max-width:560px){ section{padding:48px 18px;} }
+  @media (max-width:940px){ .hero{ padding-top:80px; padding-bottom:64px; } }
+  @media (max-width:560px){ .hero{ padding-top:56px; padding-bottom:48px; } }
+  @media (max-width:560px){
+    .symptom-panel{ padding:22px 18px; }
+    .case-head{ padding:18px 20px; }
+    .case-body{ padding:20px; font-size:16.5px; line-height:1.65; }
+    .fn-card, .ea-card, .tile{ padding:20px 16px; }
+    .mc-cell{ padding:18px 20px; }
+  }
+  section.dark{ background:var(--navy); border-bottom:none; position:relative; overflow:hidden; }
+
+  .section-head{ margin-bottom:44px; max-width:720px; }
+  .section-head h2{ font-size:clamp(28px,4vw,40px); margin-top:14px; line-height:1.12; }
+  .section-head .lede{ margin-top:16px; font-size:17px; color:var(--ink-soft); max-width:600px; }
+
+  /* ---------- hero ---------- */
+  .hero{
+    display:flex; flex-direction:column; justify-content:center;
+    padding-top:120px; padding-bottom:96px;
+    position:relative; overflow:hidden;
+  }
+  .swoosh{ position:absolute; pointer-events:none; z-index:0; }
+  .swoosh.tl{ top:-60px; left:-70px; width:340px; height:340px; }
+  .swoosh.br{ bottom:-90px; right:-90px; width:300px; height:300px; }
+  @media (max-width:560px){
+    .swoosh.tl{ width:210px; height:210px; top:-40px; left:-60px; }
+    .swoosh.br{ width:190px; height:190px; bottom:-50px; right:-60px; }
+  }
+  .hero-content{ position:relative; z-index:1; }
+  .hero .eyebrow{margin-bottom:22px;}
+  .hero h1{
+    font-size:clamp(40px,6.4vw,78px);
+    line-height:1.02;
+    letter-spacing:-0.01em;
+  }
+  .hero h1 em{font-style:italic; color:var(--vital); font-weight:500;}
+  .hero .sub{
+    margin-top:26px; font-size:19px; color:var(--ink-soft); max-width:560px; font-family:'Fraunces',serif; font-weight:400; font-style:italic;
+  }
+  .hero-monitor{ margin-top:56px; }
+  .hero-byline{
+    margin-top:64px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    border-top:1px solid var(--line); padding-top:22px;
+  }
+  .hero-byline .who b{display:block; font-family:'Fraunces',serif; font-size:16px; font-weight:600;}
+  .hero-byline .who span{display:block; font-size:13px; color:var(--ink-soft); margin-top:3px;}
+  .hero-byline .scroll-cue{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft);}
+
+  /* ---------- callouts ---------- */
+  .callout{
+    border:1px solid var(--line);
+    background:var(--paper-dim);
+    padding:22px 26px;
+    display:flex; gap:16px; align-items:flex-start;
+    margin-top:28px;
+  }
+  .callout .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase;
+    padding:4px 8px; flex-shrink:0; font-weight:600; white-space:nowrap; margin-top:1px;
+  }
+  .callout.rule{ border-color:var(--amber); background:var(--amber-dim); }
+  .callout.rule .tag{ background:var(--amber); color:#fff; }
+  .callout.info{ border-color:var(--teal); background:var(--teal-dim); }
+  .callout.info .tag{ background:var(--teal); color:#fff; }
+  .callout.vital{ border-color:var(--vital); background:var(--vital-dim); }
+  .callout.vital .tag{ background:var(--vital); color:#fff; }
+  .callout p{font-size:15.5px; color:var(--ink);}
+
+  /* ---------- funciones grid ---------- */
+  .fn-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:800px){ .fn-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:480px){ .fn-grid{grid-template-columns:1fr;} }
+  .fn-card{ background:var(--paper); padding:30px 24px; }
+  .fn-card .num{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--vital); font-weight:600; }
+  .fn-card h3{ font-size:19px; margin-top:14px; }
+  .fn-card p{ margin-top:10px; font-size:14.5px; color:var(--ink-soft); }
+
+  /* ---------- flow diagram ---------- */
+  .flow{ display:flex; align-items:stretch; gap:0; flex-wrap:wrap; }
+  .flow-step{
+    flex:1 1 220px; border:1px solid var(--line); padding:22px 20px; background:var(--paper);
+    display:flex; flex-direction:column; gap:8px; position:relative;
+  }
+  .flow-step .code{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--vital); font-weight:600; }
+  .flow-step h4{ font-size:16.5px; }
+  .flow-step p{ font-size:13.5px; color:var(--ink-soft); }
+  .flow-arrow{
+    display:flex; align-items:center; justify-content:center; width:36px; flex-shrink:0; color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace; font-size:16px;
+  }
+  @media (max-width:760px){
+    .flow{flex-direction:column;}
+    .flow-arrow{width:auto; height:26px; transform:rotate(90deg);}
+  }
+
+  /* ---------- MC toggle example ---------- */
+  .mc-tabs{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .mc-tab{
+    all:unset; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.05em;
+    padding:12px 18px; border:1px solid var(--line); color:var(--ink-soft);
+  }
+  .mc-tab.active{ border-color:var(--vital); color:var(--vital); background:var(--vital-dim); font-weight:600;}
+  .mc-examples{ display:grid; gap:1px; background:var(--line); border:1px solid var(--line); }
+  .mc-row{ display:grid; grid-template-columns:1fr 1fr; background:var(--paper); }
+  .mc-row.reversed{ direction:rtl; }
+  .mc-row.reversed > *{ direction:ltr; }
+  @media (max-width:700px){ .mc-row{grid-template-columns:1fr;} }
+  .mc-cell{ padding:22px 24px; }
+  .mc-cell.patient{ font-family:'Fraunces',serif; font-style:italic; font-size:17px; }
+  .mc-cell.term{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--vital); font-weight:600; display:flex; align-items:center; }
+  .mc-cell.term::before{ content:"→"; margin-right:10px; color:var(--ink-soft); }
+  .mc-legend{ margin-top:14px; font-size:13px; color:var(--ink-soft); }
+
+  /* ---------- EA component cards ---------- */
+  .ea-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:920px){ .ea-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:520px){ .ea-grid{grid-template-columns:1fr;} }
+  .ea-card{ background:var(--paper); padding:24px 18px; }
+  .ea-card h4{ font-size:15px; }
+  .ea-card p{ font-size:13px; color:var(--ink-soft); margin-top:8px; }
+
+  .timeline{ display:flex; gap:1px; background:var(--line); border:1px solid var(--line); margin-top:8px;}
+  .timeline > div{ flex:1; background:var(--paper); padding:20px; text-align:center; }
+  .timeline .k{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; color:var(--vital); }
+  .timeline .v{ font-size:14px; color:var(--ink-soft); margin-top:6px; }
+  @media (max-width:600px){ .timeline{flex-direction:column;} }
+
+  /* ---------- symptom explorer (signature interactive) ---------- */
+  .symptom-explorer{ border:1px solid var(--line); background:var(--paper); }
+  .symptom-tabs{
+    display:flex; border-bottom:1px solid var(--line); overflow-x:auto;
+  }
+  .symptom-tab{
+    all:unset; cursor:pointer; flex:1; min-width:110px; text-align:center;
+    padding:18px 12px; font-family:'IBM Plex Mono',monospace; font-size:13px; letter-spacing:.04em;
+    color:var(--ink-soft); border-right:1px solid var(--line); position:relative;
+  }
+  .symptom-tab:last-child{border-right:none;}
+  .symptom-tab.active{ color:var(--vital); font-weight:600; background:var(--vital-dim); }
+  @media (max-width:560px){
+    .symptom-tab{ min-width:88px; padding:14px 10px; font-size:12px; }
+    .sp-grid{ grid-template-columns:1fr; }
+  }
+  .symptom-panel{ padding:32px; display:none; }
+  .symptom-panel.active{ display:block; }
+  .symptom-panel h4{ font-size:22px; margin-bottom:6px; }
+  .symptom-panel .sp-sub{ font-size:14px; color:var(--ink-soft); font-family:'Fraunces',serif; font-style:italic; margin-bottom:22px; }
+  .sp-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+  .sp-item{ border-left:2px solid var(--vital); padding:4px 0 4px 14px; }
+  .sp-item .k{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--ink); }
+  .sp-item .v{ font-size:13.5px; color:var(--ink-soft); margin-top:4px; }
+  .sp-group-title{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); margin:22px 0 12px; }
+  .sp-group-title:first-of-type{ margin-top:0; }
+
+  /* ---------- clinical case ---------- */
+  .case{
+    border:1px solid var(--ink); background:var(--paper); position:relative;
+  }
+  .case-head{ padding:22px 30px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  .case-head .mc{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--vital); font-weight:600; letter-spacing:.05em; }
+  .case-body{ padding:30px; font-family:'Fraunces',serif; font-size:18px; line-height:1.75; color:var(--ink); }
+  .case-body b{font-weight:600;}
+
+  /* ---------- systems / antecedentes grids ---------- */
+  .tile-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:800px){ .tile-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:520px){ .tile-grid{grid-template-columns:1fr;} }
+  .tile{ background:var(--paper); padding:22px 20px; min-height:110px; display:flex; flex-direction:column; justify-content:space-between; }
+  .tile h4{ font-size:15px; }
+  .tile p{ font-size:13px; color:var(--ink-soft); margin-top:10px; }
+
+  .chip-grid{ display:flex; flex-wrap:wrap; gap:10px; }
+  .chip{
+    border:1px solid var(--line); padding:12px 18px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--ink);
+    background:var(--paper);
+  }
+
+  /* ---------- exam techniques ---------- */
+  .tech-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  @media (max-width:700px){ .tech-row{grid-template-columns:repeat(2,1fr);} }
+  .tech-cell{ background:var(--paper); padding:26px 20px; text-align:center; }
+  .tech-cell .idx{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--vital); }
+  .tech-cell h4{ font-size:16px; margin-top:8px; }
+
+  .order-list{ display:flex; flex-wrap:wrap; gap:8px; margin-top:24px; }
+  .order-list span{
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; padding:9px 14px; border:1px solid var(--line); color:var(--ink-soft);
+    display:flex; align-items:center; gap:8px;
+  }
+  .order-list span b{ color:var(--vital); font-weight:600; }
+
+  /* ---------- closing ---------- */
+  .closing{
+    color:var(--paper); text-align:center; padding-top:120px; padding-bottom:140px;
+    position:relative; z-index:1;
+  }
+  .closing .eyebrow{ justify-content:center; color:var(--swoosh); }
+  .closing .eyebrow::before{ display:none; }
+  .closing-note{
+    color:var(--paper); font-family:'Fraunces',serif; font-style:italic; font-weight:400;
+    font-size:clamp(22px,3vw,30px); line-height:1.4; max-width:620px; margin:0 auto;
+  }
+  .closing .who{ margin-top:30px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:#B8C2CC; }
+  .closing .who b{ display:block; color:var(--paper); font-family:'Fraunces',serif; font-size:17px; font-weight:500; margin-bottom:4px;}
+  .closing-brand{
+    margin-top:44px; padding-top:22px; border-top:1px solid rgba(255,255,255,0.14);
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--swoosh); display:inline-block;
+  }
+
+  /* ---------- institutional footer bar ---------- */
+  .footer-bar{
+    height:10px; background:var(--teal); width:100%;
+  }
+
+  ::selection{ background:var(--vital); color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- NAV RAIL -->
+  <nav class="rail" aria-label="Navegación de secciones">
+    <div class="rail-top">
+      <div class="rail-brand"><span>Semiología Médica</span>La historia clínica</div>
+    </div>
+
+    <div class="trace-wrap" aria-hidden="true">
+      <svg class="trace-svg" viewBox="0 0 26 400" preserveAspectRatio="none">
+        <path id="trace-path" d="M13,4 L13,60 L8,66 L18,80 L13,96 L13,150 L6,158 L20,170 L13,180 L13,240 L8,246 L18,260 L13,276 L13,330 L6,338 L20,350 L13,360 L13,396"/>
+        <path id="trace-fill" d="M13,4 L13,60 L8,66 L18,80 L13,96 L13,150 L6,158 L20,170 L13,180 L13,240 L8,246 L18,260 L13,276 L13,330 L6,338 L20,350 L13,360 L13,396" stroke-dasharray="900" stroke-dashoffset="900"/>
+        <circle id="trace-blip" cx="13" cy="4" r="3.4"/>
+      </svg>
+      <ul class="navlist" id="navlist">
+        <li><button data-target="hero">Inicio</button></li>
+        <li><button data-target="porque">Por qué importa</button></li>
+        <li><button data-target="funciones">Funciones</button></li>
+        <li><button data-target="estructura">Estructura</button></li>
+        <li><button data-target="motivo">Motivo de consulta</button></li>
+        <li><button data-target="enfermedad">Enfermedad actual</button></li>
+        <li><button data-target="caso">Caso clínico</button></li>
+        <li><button data-target="revision">Revisión por sistemas</button></li>
+        <li><button data-target="antecedentes">Antecedentes</button></li>
+        <li><button data-target="examen">Examen físico</button></li>
+      </ul>
+    </div>
+
+    <div class="rail-foot">
+      Anamnesis<br>
+      Semiología Médica
+    </div>
+  </nav>
+
+  <!-- mobile nav duplicate (shown only <940px via CSS reuse) -->
+  <main>
+
+    <!-- HERO -->
+    <section id="hero" class="hero">
+      <svg class="swoosh tl" viewBox="0 0 340 340" aria-hidden="true">
+        <path d="M -40,10 C 60,-30 120,120 40,190 C -20,245 -60,200 -80,260" fill="none" stroke="var(--swoosh)" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+      </svg>
+      <svg class="swoosh br" viewBox="0 0 300 300" aria-hidden="true">
+        <path d="M 340,90 C 240,50 190,180 260,240 C 310,285 340,250 360,300" fill="none" stroke="var(--swoosh)" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+      </svg>
+      <div class="hero-content">
+      <div class="eyebrow">Semiología Médica</div>
+      <h1>La anamnesis<br>en <em>la historia clínica</em></h1>
+      <p class="sub">"El registro que convierte el relato de un paciente en una hipótesis diagnóstica — y en prueba médico-legal del acto de atención en salud."</p>
+
+      <div class="hero-byline">
+        <div class="who">
+          <b>Juan David Serna Zuluaga, MD, MSc.</b>
+          <span>Médico docente, Semiología · Facultad de Ciencias de la Salud</span>
+          <span>Magíster en Educación y Transformación Digital</span>
+        </div>
+        <div class="scroll-cue">↓ Desplázate</div>
+      </div>
+      </div>
+    </section>
+
+    <!-- POR QUÉ IMPORTA -->
+    <section id="porque">
+      <div class="section-head">
+        <div class="eyebrow">Punto de partida</div>
+        <h2>¿Por qué la historia clínica es importante en el ámbito clínico?</h2>
+        <p class="lede">Antes de aprender su estructura, entendamos su propósito.</p>
+      </div>
+    </section>
+
+    <!-- FUNCIONES -->
+    <section id="funciones">
+      <div class="section-head">
+        <div class="eyebrow">Anamnesis</div>
+        <h2>Funciones de la historia clínica</h2>
+      </div>
+      <div class="fn-grid">
+        <div class="fn-card">
+          <div class="num">01</div>
+          <h3>Documento legal</h3>
+          <p>Es prueba médico-legal del acto de atención en salud.</p>
+        </div>
+        <div class="fn-card">
+          <div class="num">02</div>
+          <h3>Herramienta de comunicación</h3>
+          <p>Articula al equipo tratante alrededor de un mismo paciente.</p>
+        </div>
+        <div class="fn-card">
+          <div class="num">03</div>
+          <h3>Continuidad del cuidado</h3>
+          <p>Permite seguir la evolución del paciente en el tiempo.</p>
+        </div>
+        <div class="fn-card">
+          <div class="num">04</div>
+          <h3>Base del diagnóstico</h3>
+          <p>Sostiene la hipótesis diagnóstica que guía la conducta médica.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ESTRUCTURA -->
+    <section id="estructura">
+      <div class="section-head">
+        <div class="eyebrow">Sección 1 · Anamnesis</div>
+        <h2>El interrogatorio: estructura de la historia clínica</h2>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <span class="code">MC</span>
+          <h4>Motivo de consulta</h4>
+          <p>Por qué acude el paciente hoy.</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span class="code">EA</span>
+          <h4>Enfermedad actual</h4>
+          <p>La historia narrada del síntoma.</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span class="code">Rx</span>
+          <h4>Revisión por sistemas</h4>
+          <p>Lo que no se relaciona con la EA.</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span class="code">Ant.</span>
+          <h4>Antecedentes</h4>
+          <p>La historia previa del paciente.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MOTIVO DE CONSULTA -->
+    <section id="motivo">
+      <div class="section-head">
+        <div class="eyebrow">Sección 2 · Motivo de consulta</div>
+        <h2>El punto de partida de toda la historia clínica</h2>
+        <p class="lede">Es la razón principal por la que el paciente acude a la atención médica. Generalmente corresponde a un síntoma.</p>
+      </div>
+
+      <div class="callout info">
+        <span class="tag">En síntesis</span>
+        <p>Un síntoma. Las palabras del paciente. El inicio de la hipótesis diagnóstica.</p>
+      </div>
+
+      <div style="margin-top:56px;">
+        <h3 style="font-size:22px; margin-bottom:20px;">¿Cómo debe escribirse?</h3>
+        <div class="mc-tabs" role="tablist" aria-label="Formas de registrar el motivo de consulta">
+          <button class="mc-tab active" data-mc="ideal" role="tab" aria-selected="true">Opción 1 · Ideal</button>
+          <button class="mc-tab" data-mc="formal" role="tab" aria-selected="false">Opción 2 · Formal</button>
+        </div>
+        <p class="mc-legend" id="mc-desc">En palabras textuales del paciente, entre comillas.</p>
+        <div class="mc-examples" style="margin-top:16px;">
+          <div class="mc-row">
+            <div class="mc-cell patient">"Doctor, me duele el pecho desde ayer"</div>
+            <div class="mc-cell term">Dolor torácico</div>
+          </div>
+          <div class="mc-row">
+            <div class="mc-cell patient">"Tengo falta de aire"</div>
+            <div class="mc-cell term">Disnea de esfuerzo</div>
+          </div>
+          <div class="mc-row">
+            <div class="mc-cell patient">"Vengo porque estoy muy mareado"</div>
+            <div class="mc-cell term">Cefalea intensa</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ENFERMEDAD ACTUAL -->
+    <section id="enfermedad">
+      <div class="section-head">
+        <div class="eyebrow">Sección 3 · Enfermedad actual</div>
+        <h2>Los componentes que debe recoger</h2>
+      </div>
+
+      <div class="ea-grid">
+        <div class="ea-card"><h4>Tiempo de evolución</h4><p>Del síntoma cardinal, motivo de consulta.</p></div>
+        <div class="ea-card"><h4>Síntoma cardinal</h4><p>El síntoma "oro", caracterizado a fondo.</p></div>
+        <div class="ea-card"><h4>Síntomas concomitantes</h4><p>Lo que acompaña al síntoma principal.</p></div>
+        <div class="ea-card"><h4>Factores calmantes y agravantes</h4><p>Qué mejora o empeora el cuadro.</p></div>
+        <div class="ea-card"><h4>Consulta al servicio</h4><p>Por qué decide consultar hoy.</p></div>
+      </div>
+
+      <div style="margin-top:64px;">
+        <h3 style="font-size:20px;">Tiempo de evolución del síntoma</h3>
+        <div class="timeline">
+          <div><div class="k">Agudo</div><div class="v">Horas a días</div></div>
+          <div><div class="k">Subagudo</div><div class="v">Días a semanas</div></div>
+          <div><div class="k">Crónico</div><div class="v">Meses a años</div></div>
+        </div>
+      </div>
+
+      <div class="callout rule">
+        <span class="tag">Regla de oro</span>
+        <p>Se hacen preguntas dirigidas según el conocimiento semiológico que se tenga del síntoma "oro". Un solo síntoma es, casi siempre, muy poco específico para definir una patología. Jamás se deja pasar un síntoma sin caracterizarlo.</p>
+      </div>
+
+      <!-- SYMPTOM EXPLORER -->
+      <div style="margin-top:64px;">
+        <h3 style="font-size:20px; margin-bottom:8px;">Cinco síntomas cardinales frecuentes</h3>
+        <p class="lede" style="margin-bottom:24px;">Explora cómo se caracteriza cada uno.</p>
+
+        <div class="symptom-explorer">
+          <div class="symptom-tabs" role="tablist" aria-label="Síntomas cardinales">
+            <button class="symptom-tab active" data-symptom="dolor" role="tab" aria-selected="true">Dolor</button>
+            <button class="symptom-tab" data-symptom="disnea" role="tab" aria-selected="false">Disnea</button>
+            <button class="symptom-tab" data-symptom="tos" role="tab" aria-selected="false">Tos</button>
+            <button class="symptom-tab" data-symptom="fiebre" role="tab" aria-selected="false">Fiebre</button>
+            <button class="symptom-tab" data-symptom="edema" role="tab" aria-selected="false">Edema</button>
+          </div>
+
+          <div class="symptom-panel active" data-panel="dolor">
+            <h4>Dolor</h4>
+            <p class="sp-sub">Cuatro ejes de caracterización</p>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">1 · Localización</div><div class="v">Dónde exactamente.</div></div>
+              <div class="sp-item"><div class="k">2 · Tipo o carácter</div><div class="v">Opresivo, urente, punzante...</div></div>
+              <div class="sp-item"><div class="k">3 · Intensidad</div><div class="v">Escala subjetiva del paciente.</div></div>
+              <div class="sp-item"><div class="k">4 · Irradiación</div><div class="v">Hacia dónde se extiende.</div></div>
+            </div>
+          </div>
+
+          <div class="symptom-panel" data-panel="disnea">
+            <h4>Disnea</h4>
+            <p class="sp-sub">Inicio súbito o progresivo, con el esfuerzo</p>
+            <div class="sp-group-title">Relacionadas con el decúbito</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Ortopnea</div><div class="v">Interrumpe el sueño; requiere posición sentada.</div></div>
+              <div class="sp-item"><div class="k">Bendopnea</div><div class="v">Al inclinarse hacia adelante.</div></div>
+              <div class="sp-item"><div class="k">Platipnea</div><div class="v">Empeora en posición vertical.</div></div>
+            </div>
+            <div class="sp-group-title">Otra forma clínica</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Disnea paroxística nocturna</div><div class="v">Despierta al paciente por la noche.</div></div>
+            </div>
+          </div>
+
+          <div class="symptom-panel" data-panel="tos">
+            <h4>Tos</h4>
+            <p class="sp-sub">Seca o húmeda, con expectoración · ¿continua o predominantemente nocturna?</p>
+            <div class="sp-group-title">Según la expectoración</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Blanca</div><div class="v">Transparente, hialina.</div></div>
+              <div class="sp-item"><div class="k">Verde o amarilla</div><div class="v">Purulenta.</div></div>
+              <div class="sp-item"><div class="k">Con sangre</div><div class="v">Hemoptisis.</div></div>
+            </div>
+            <div class="callout vital" style="margin-top:26px;">
+              <span class="tag">Hemoptisis</span>
+              <p>Signos que orientan a TBC: diaforesis nocturna, fiebre nocturna, pérdida de peso. Ante esta tríada, se solicita BK de esputo seriado + PCR y cultivo para Mycobacterium.</p>
+            </div>
+          </div>
+
+          <div class="symptom-panel" data-panel="fiebre">
+            <h4>Fiebre</h4>
+            <p class="sp-sub">Cómo se cuantifica y cómo se presenta en el tiempo</p>
+            <div class="sp-group-title">Medición</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Subjetiva cuantificada</div><div class="v">El paciente la midió.</div></div>
+              <div class="sp-item"><div class="k">Subjetiva no cuantificada</div><div class="v">Percibida, sin medición.</div></div>
+            </div>
+            <div class="sp-group-title">Patrón</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Continua</div><div class="v">Persiste sin remisión.</div></div>
+              <div class="sp-item"><div class="k">Predominio nocturno</div><div class="v">Aparece o empeora en la noche.</div></div>
+            </div>
+          </div>
+
+          <div class="symptom-panel" data-panel="edema">
+            <h4>Edema</h4>
+            <p class="sp-sub">Distribución y extensión</p>
+            <div class="sp-group-title">Distribución</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Simétrico bilateral</div><div class="v">Falla cardiaca, hepatopatía, Sx nefrótico.</div></div>
+              <div class="sp-item"><div class="k">Asimétrico unilateral</div><div class="v">TVP, angioedema focal.</div></div>
+            </div>
+            <div class="sp-group-title">Extensión</div>
+            <div class="sp-grid">
+              <div class="sp-item"><div class="k">Localizado</div><div class="v">Circunscrito a una zona.</div></div>
+              <div class="sp-item"><div class="k">Generalizado</div><div class="v">Compromete varias regiones.</div></div>
+              <div class="sp-item"><div class="k">Anasarca</div><div class="v">Edema generalizado extremo.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:64px;">
+        <h3 style="font-size:20px;">El tiempo, ordenado</h3>
+        <p class="lede" style="margin-top:12px; margin-bottom:24px;">Es la secuencia de un grupo de síntomas que comparten una relación fisiopatológica. No se mezclan síntomas de sistemas diferentes en un mismo relato.</p>
+        <div class="callout info">
+          <span class="tag">La finalidad</span>
+          <p>Terminar la enfermedad actual con una primera hipótesis diagnóstica.</p>
+        </div>
+
+        <div class="flow" style="margin-top:32px;">
+          <div class="flow-step"><h4>Tiempo de evolución</h4><p>Cada uno con sus propias características.</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><h4>Síntoma cardinal</h4><p>Cada uno con sus propias características.</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><h4>Síntomas concomitantes</h4><p>Cada uno con sus propias características.</p></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step"><h4>Factores calmantes y agravantes</h4><p>Y finalmente, por qué decide consultar el día de hoy.</p></div>
+        </div>
+
+        <div class="ea-grid" style="margin-top:32px; grid-template-columns:repeat(2,1fr);">
+          <div class="ea-card"><h4>Factores calmantes</h4><p>Qué alivia el síntoma.</p></div>
+          <div class="ea-card"><h4>Factores agravantes</h4><p>Qué empeora el síntoma.</p></div>
+        </div>
+        <div class="callout rule" style="margin-top:20px;">
+          <span class="tag">El cierre de la EA</span>
+          <p>Por lo anterior, el paciente decide consultar al servicio el día de hoy con un diagnóstico principal como primera hipótesis.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CASO CLÍNICO -->
+    <section id="caso">
+      <div class="section-head">
+        <div class="eyebrow">Caso clínico</div>
+        <h2>Enfermedad actual, aplicada</h2>
+      </div>
+      <div class="case">
+        <div class="case-head">
+          <span class="mc">Motivo de consulta</span>
+          <span class="mono" style="font-size:14px; font-style:italic;">"Dolor en el pecho"</span>
+        </div>
+        <div class="case-body">
+          Paciente de 65 años quien consulta por presentar cuadro clínico de <b>6 horas de evolución</b> consistente en dolor localizado en región precordial, tipo opresivo, de intensidad moderada, irradiado a región mandibular y miembro superior izquierdo. Concomitantemente refiere disnea progresiva tipo ortopnea, niega disnea paroxística nocturna; además refiere diaforesis y emesis en dos oportunidades de contenido alimentario. Como <b>factor agravante</b> refiere el esfuerzo; como <b>factor calmante</b>, automedicación con acetaminofén y aspirina en dosis única. Debido a lo anterior, decide consultar el día de hoy.
+        </div>
+      </div>
+    </section>
+
+    <!-- REVISIÓN POR SISTEMAS -->
+    <section id="revision">
+      <div class="section-head">
+        <div class="eyebrow">Sección 4 · Revisión por sistemas</div>
+        <h2>Lo que no se relaciona con la enfermedad actual</h2>
+        <p class="lede">Síntomas que manifiesta el paciente y que, fisiopatológicamente, no tienen relación con el posible diagnóstico en construcción.</p>
+      </div>
+
+      <div class="callout info">
+        <span class="tag">Ejemplo</span>
+        <p>Paciente que ingresa por dolor en miembro inferior izquierdo de 6 horas de evolución, urente, severo, no irradiado — quien refiere cefalea holocraneana, deposiciones diarreicas y una lesión en piel tipo mancha. Estos hallazgos orientan además a diagnósticos secundarios.</p>
+      </div>
+
+      <div style="margin-top:48px;" class="tile-grid">
+        <div class="tile"><h4>General / Constitucional</h4><p>Fiebre, astenia, adinamia, cambios de peso.</p></div>
+        <div class="tile"><h4>Piel y faneras</h4><p>Lesiones, prurito, cambios de color, cabello y uñas.</p></div>
+        <div class="tile"><h4>Cabeza / ojos / oídos</h4><p>Cefalea, alteraciones visuales o auditivas.</p></div>
+        <div class="tile"><h4>Respiratorio</h4><p>Tos, disnea, dolor pleurítico.</p></div>
+        <div class="tile"><h4>Cardiovascular</h4><p>Palpitaciones, dolor precordial, edema.</p></div>
+        <div class="tile"><h4>Gastrointestinal</h4><p>Náuseas, dolor abdominal, hematemesis.</p></div>
+        <div class="tile"><h4>Neurológico</h4><p>Mareo, parestesias, pérdida de conciencia.</p></div>
+        <div class="tile"><h4>Genitourinario</h4><p>Disuria, hematuria, dolor lumbar.</p></div>
+        <div class="tile"><h4>Psiquiátrico / Salud mental</h4><p>Ansiedad, insomnio, cambios de ánimo.</p></div>
+        <div class="tile"><h4>Gineco-obstétrico</h4><p>Alteraciones menstruales, gestaciones previas.</p></div>
+        <div class="tile"><h4>Endocrino / Metabólico</h4><p>Poliuria, intolerancia al frío/calor.</p></div>
+        <div class="tile"><h4>Musculoesquelético</h4><p>Artralgias, mialgias, limitación funcional.</p></div>
+        <div class="tile"><h4>Hematológico / Linfático</h4><p>Equimosis, sangrado fácil, adenopatías.</p></div>
+      </div>
+    </section>
+
+    <!-- ANTECEDENTES -->
+    <section id="antecedentes">
+      <div class="section-head">
+        <div class="eyebrow">Sección 5 · Antecedentes</div>
+        <h2>La historia previa del paciente</h2>
+      </div>
+      <div class="chip-grid">
+        <span class="chip">Patológicos</span>
+        <span class="chip">Quirúrgicos</span>
+        <span class="chip">Traumáticos</span>
+        <span class="chip">Alérgicos</span>
+        <span class="chip">Farmacológicos</span>
+        <span class="chip">Transfusionales</span>
+        <span class="chip">Toxicológicos</span>
+        <span class="chip">Familiares</span>
+        <span class="chip">Gineco-obstétricos</span>
+        <span class="chip">Sociales</span>
+        <span class="chip">Psiquiátricos</span>
+        <span class="chip">Hospitalarios</span>
+      </div>
+    </section>
+
+    <!-- EXAMEN FÍSICO -->
+    <section id="examen">
+      <div class="section-head">
+        <div class="eyebrow">Sección 6 · Examen físico</div>
+        <h2>En búsqueda de signos clínicos</h2>
+      </div>
+
+      <div class="tech-row">
+        <div class="tech-cell"><div class="idx">01</div><h4>Inspección</h4></div>
+        <div class="tech-cell"><div class="idx">02</div><h4>Palpación</h4></div>
+        <div class="tech-cell"><div class="idx">03</div><h4>Percusión</h4></div>
+        <div class="tech-cell"><div class="idx">04</div><h4>Auscultación</h4></div>
+      </div>
+
+      <div class="callout rule">
+        <span class="tag">Regla de oro</span>
+        <p>Todo examen físico, sin importar el sistema, debería empezar con la toma de signos vitales.</p>
+      </div>
+
+      <div style="margin-top:48px;">
+        <h3 style="font-size:20px; margin-bottom:6px;">Sistema por sistema, en orden</h3>
+        <div class="order-list">
+          <span><b>01</b>Signos vitales</span>
+          <span><b>02</b>Estado general</span>
+          <span><b>03</b>Piel / faneras</span>
+          <span><b>04</b>Cabeza / cuello</span>
+          <span><b>05</b>Cardiovascular</span>
+          <span><b>06</b>Respiratorio</span>
+          <span><b>07</b>Abdomen</span>
+          <span><b>08</b>Genitourinario</span>
+          <span><b>09</b>Osteomuscular</span>
+          <span><b>10</b>Neurológico</span>
+          <span><b>11</b>Psiquiátrico</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- CIERRE -->
+    <section id="cierre" class="dark">
+      <svg class="swoosh tl" viewBox="0 0 340 340" aria-hidden="true" style="opacity:0.9;">
+        <path d="M -40,10 C 60,-30 120,120 40,190 C -20,245 -60,200 -80,260" fill="none" stroke="var(--swoosh)" stroke-width="10" stroke-linecap="round"/>
+      </svg>
+      <svg class="swoosh br" viewBox="0 0 300 300" aria-hidden="true" style="opacity:0.55;">
+        <path d="M 340,90 C 240,50 190,180 260,240 C 310,285 340,250 360,300" fill="none" stroke="var(--swoosh)" stroke-width="8" stroke-linecap="round"/>
+      </svg>
+      <div class="closing">
+        <p class="closing-note">La anamnesis convierte el relato de un paciente en el punto de partida del diagnóstico.</p>
+        <div class="who">
+          <b>Juan David Serna Zuluaga, MD, MSc.</b>
+          Médico docente, Semiología · Facultad de Ciencias de la Salud
+        </div>
+        <div class="closing-brand">Universidad de Manizales</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<div class="footer-bar" aria-hidden="true"></div>
+
+<script>
+(function(){
+  var sections = ['hero','porque','funciones','estructura','motivo','enfermedad','caso','revision','antecedentes','examen','cierre'];
+  var navButtons = Array.prototype.slice.call(document.querySelectorAll('#navlist button'));
+  var sectionEls = sections.map(function(id){ return document.getElementById(id); }).filter(Boolean);
+
+  navButtons.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var el = document.getElementById(btn.getAttribute('data-target'));
+      if(el){ el.scrollIntoView({behavior:'smooth', block:'start'}); }
+    });
+  });
+
+  var tracePath = document.getElementById('trace-fill');
+  var traceLen = 0;
+  try{ if(tracePath){ traceLen = tracePath.getTotalLength(); } }catch(e){}
+  if(tracePath){ tracePath.style.strokeDasharray = traceLen; tracePath.style.strokeDashoffset = traceLen; }
+  var blip = document.getElementById('trace-blip');
+
+  var ticking = false;
+  function onScroll(){
+    if(ticking) return;
+    ticking = true;
+    requestAnimationFrame(function(){
+      var doc = document.documentElement;
+      var scrollTop = window.scrollY || doc.scrollTop;
+      var max = (doc.scrollHeight - window.innerHeight) || 1;
+      var progress = Math.min(Math.max(scrollTop / max, 0), 1);
+
+      if(tracePath){
+        var offset = traceLen * (1 - progress);
+        tracePath.style.strokeDashoffset = offset;
+        try{
+          var pt = tracePath.getPointAtLength(traceLen * progress);
+          if(blip){ blip.setAttribute('cx', pt.x); blip.setAttribute('cy', pt.y); }
+        }catch(e){}
+      }
+
+      // active section highlight
+      var current = sectionEls[0];
+      var viewLine = window.innerHeight * 0.35;
+      for(var i=0;i<sectionEls.length;i++){
+        var rect = sectionEls[i].getBoundingClientRect();
+        if(rect.top - viewLine <= 0){ current = sectionEls[i]; }
+      }
+      navButtons.forEach(function(btn){
+        btn.classList.toggle('active', btn.getAttribute('data-target') === current.id);
+      });
+
+      ticking = false;
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', function(){
+    if(tracePath){ try{ traceLen = tracePath.getTotalLength(); }catch(e){} }
+    onScroll();
+  });
+  onScroll();
+
+  // MC ideal/formal toggle
+  var mcTabs = document.querySelectorAll('.mc-tab');
+  var mcDesc = document.getElementById('mc-desc');
+  var mcDescs = {
+    ideal: 'En palabras textuales del paciente, entre comillas.',
+    formal: 'En terminología médica, útil en formatos institucionales.'
+  };
+  mcTabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      mcTabs.forEach(function(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+      tab.classList.add('active'); tab.setAttribute('aria-selected','true');
+      var mode = tab.getAttribute('data-mc');
+      mcDesc.textContent = mcDescs[mode];
+      document.querySelectorAll('.mc-row').forEach(function(row){
+        row.classList.toggle('reversed', mode === 'formal');
+      });
+    });
+  });
+
+  // Symptom explorer tabs
+  var symptomTabs = document.querySelectorAll('.symptom-tab');
+  var symptomPanels = document.querySelectorAll('.symptom-panel');
+  symptomTabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      symptomTabs.forEach(function(t){ t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+      tab.classList.add('active'); tab.setAttribute('aria-selected','true');
+      var target = tab.getAttribute('data-symptom');
+      symptomPanels.forEach(function(p){
+        p.classList.toggle('active', p.getAttribute('data-panel') === target);
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
